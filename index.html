@@ -105,7 +105,7 @@ body:has(#game:not([hidden])){overflow:hidden}
 </style></head><body>
 <div id="lobby">
  <header class="brand"><div class="brandmark"><span class="brandicon">⚄</span><span>Dominó <span class="blueword">Online</span></span></div><div class="brandright"><div class="online"><span class="dot"></span>Multijogador online</div><button type="button" class="gear" aria-label="Configurações" title="Regras" onclick="openRules()">⚙</button></div></header>
- <p class="tagline">Crie uma sala e compartilhe o código com seus amigos!</p><div class="underline"></div><div class="fieldrow hasprefix" style="width:min(100%,460px);margin:0 auto 22px"><span class="prefix">♟</span><input class="field" id="nm" placeholder="Seu nome" maxlength="12" autocomplete="nickname" aria-label="Seu nome"></div>
+ <p class="tagline">Crie uma sala e compartilhe o código com seus amigos! <span style="opacity:.5;font-size:.7em">(v5)</span></p><div class="underline"></div><div class="fieldrow hasprefix" style="width:min(100%,460px);margin:0 auto 22px"><span class="prefix">♟</span><input class="field" id="nm" placeholder="Seu nome" maxlength="12" autocomplete="nickname" aria-label="Seu nome"></div>
  <main class="lobbycards">
   <section class="lobbycard"><div class="cardicon">⇥</div><h2>Entrar em uma sala</h2><p>Digite o código da sala para entrar:</p><div class="fieldrow hasprefix"><span class="prefix">#</span><input class="field" id="cd" placeholder="Código da sala" maxlength="4" autocomplete="off" aria-label="Código da sala"></div><button class="action blue" onclick="join()"><span>⇥</span> Entrar</button></section>
   <section class="lobbycard"><div class="cardicon">⊕</div><h2>Criar uma sala</h2><p>Você será o anfitrião da sala:</p><button class="action green" onclick="create()"><span>▶</span> Criar Sala</button></section>
@@ -171,29 +171,48 @@ function closeRules(){$('modal').hidden=true}
 $('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeRules()});
 
 function create(){
+ const name=myName();
  code=Array.from({length:4},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.random()*24|0]).join('');
- db.ref('rooms/'+code).transaction(r=>r?undefined:{st:'lobby',p:[uid+myName()]},(e,ok)=>ok?listen():e?alert('Erro ao criar a sala'):create())}
+ const roomRef=db.ref('rooms/'+code);
+ roomRef.transaction(r=>{
+  if(r)return; // codigo em uso -> aborta e tenta outro
+  return {st:'lobby',p:[uid+name]};
+ },(err,ok)=>{
+  if(ok){listen();return}
+  if(err){alert('Erro ao criar a sala: '+err.message);return}
+  create(); // colisao de codigo
+ });
+}
 
 function join(){
+ const name=myName();
  code=$('cd').value.trim().toUpperCase();
- if(!/^[A-Z]{4}$/.test(code))return alert('Código inválido');
- const r=db.ref('rooms/'+code);
- r.once('value').then(snap=>{
+ if(!/^[A-Z]{4}$/.test(code))return alert('Código inválido (4 letras).');
+ const roomRef=db.ref('rooms/'+code);
+ roomRef.once('value').then(snap=>{
   const cur=snap.val();
-  if(!cur)return alert('Sala não encontrada. Confira o código ou peça ao anfitrião para criar de novo.');
-  if(cur.st!=='lobby')return alert('Essa sala já começou a partida.');
-  if(!cur.p||cur.p.length>=4)return alert('Sala cheia (máx. 4 jogadores).');
-  if(cur.p.some(p=>p.startsWith(uid)))return listen();
-  r.transaction(x=>{
-   if(!x||x.st!=='lobby'||!x.p||x.p.length>=4)return;
-   if(x.p.some(p=>p.startsWith(uid)))return x;
-   return Object.assign({},x,{p:x.p.concat([uid+myName()])});
-  },(e,ok)=>{
+  if(!cur)return alert('Sala não encontrada. Código: '+code);
+  if(cur.st&&cur.st!=='lobby')return alert('Essa sala já iniciou a partida.');
+  const plist=Array.isArray(cur.p)?cur.p:Object.values(cur.p||{});
+  if(plist.length>=4)return alert('Sala cheia (máx. 4).');
+  if(plist.some(p=>String(p).startsWith(uid))){listen();return}
+  roomRef.transaction(x=>{
+   if(!x)return;
+   if(x.st&&x.st!=='lobby')return;
+   // normaliza p (Firebase as vezes vira objeto)
+   let arr=Array.isArray(x.p)?x.p.slice():Object.values(x.p||{});
+   if(arr.length>=4)return;
+   if(arr.some(p=>String(p).startsWith(uid))){x.p=arr;return x}
+   arr.push(uid+name);
+   x.p=arr;
+   return x;
+  },(err,ok)=>{
    if(ok)listen();
-   else if(e)alert('Erro de conexão: '+e.message);
-   else alert('Não foi possível entrar. Tente de novo.');
+   else if(err)alert('Erro Firebase: '+err.message);
+   else alert('Não entrou. A sala pode ter mudado — tente de novo.');
   });
- }).catch(err=>alert('Erro ao conectar: '+(err&&err.message||err)))}
+ }).catch(e=>alert('Falha de rede: '+(e&&e.message||e)));
+}
 
 function setupDisconnect(){
  if(disc){try{disc.cancel()}catch(_){} disc=null}
@@ -226,6 +245,9 @@ function listen(){
  ref.on('value',s=>{
   let room=s.val();
   if(!room){leaveRoom(true);return}
+  // Firebase pode devolver p como objeto {0:..,1:..}
+  if(room.p&&!Array.isArray(room.p))room.p=Object.values(room.p);
+
   if(room.left){
    const cleaned=cleanLeftMarkers(JSON.parse(JSON.stringify(room)));
    if(cleaned!==room){
