@@ -88,10 +88,24 @@ body:has(#game:not([hidden])){overflow:hidden}
 #fxbox.lose{color:#ff6b6b;background:#3a0a14ee;box-shadow:0 0 80px #ff3b3b66}
 #fxbox.lock{color:#9fd0ff;background:#06214aee;box-shadow:0 0 80px #1684ff88}
 @keyframes pop{from{transform:perspective(700px) rotateX(70deg) scale(.3);opacity:0}}
+
+/* doubles highlight */
+.t.dbl{box-shadow:inset 0 1px 1px #fff,inset 0 -3px 4px #b9ae91,0 0 0 2px #d4a017,0 0 12px #ffe14a66,0 3px 0 #b3a889,0 5px 0 #9c9172,0 9px 10px #000a!important}
+.t.dbl:not(.v){box-shadow:inset 0 1px 1px #fff,inset 0 -3px 4px #b9ae91,0 0 0 2px #d4a017,0 0 12px #ffe14a66!important}
+.t.dbl:after{background:radial-gradient(circle at 35% 30%,#ffe9a8,#e8b923 55%,#8a6508);box-shadow:0 1px 2px #0008,0 0 6px #ffe14a88}
+/* settings modal */
+#modal{position:fixed;inset:0;z-index:120;display:grid;place-items:center;background:#000a;padding:16px}
+#modal[hidden]{display:none!important}
+#modalbox{width:min(100%,420px);background:linear-gradient(160deg,#0a2452,#061a3b);border:2px solid #174b91;border-radius:22px;padding:22px 22px 18px;box-shadow:0 24px 60px #0008;text-align:left;color:#e8f0ff}
+#modalbox h3{margin:0 0 12px;font-size:22px;font-weight:850}
+#modalbox ul{margin:0 0 16px;padding-left:18px;color:#c8d7f2;font-size:15px;line-height:1.55}
+#modalbox li{margin-bottom:6px}
+#modalbox .close{width:100%;min-height:48px;border:0;border-radius:14px;background:linear-gradient(110deg,#1689ff,#0862e8);color:#fff;font-weight:800;font-size:16px;cursor:pointer}
+.gear,.bar-icon{cursor:pointer}
 </style></head><body>
 <div id="lobby">
- <header class="brand"><div class="brandmark"><span class="brandicon">⚄</span><span>Dominó <span class="blueword">Online</span></span></div><div class="brandright"><div class="online"><span class="dot"></span>Multijogador online</div><div class="gear" aria-label="Configurações">⚙</div></div></header>
- <p class="tagline">Jogue dominó com seus amigos ou jogadores do mundo todo!</p><div class="underline"></div><div class="fieldrow hasprefix" style="width:min(100%,460px);margin:0 auto 22px"><span class="prefix">♟</span><input class="field" id="nm" placeholder="Seu nome" maxlength="12" autocomplete="nickname" aria-label="Seu nome"></div>
+ <header class="brand"><div class="brandmark"><span class="brandicon">⚄</span><span>Dominó <span class="blueword">Online</span></span></div><div class="brandright"><div class="online"><span class="dot"></span>Multijogador online</div><button type="button" class="gear" aria-label="Configurações" title="Regras" onclick="openRules()">⚙</button></div></header>
+ <p class="tagline">Crie uma sala e compartilhe o código com seus amigos!</p><div class="underline"></div><div class="fieldrow hasprefix" style="width:min(100%,460px);margin:0 auto 22px"><span class="prefix">♟</span><input class="field" id="nm" placeholder="Seu nome" maxlength="12" autocomplete="nickname" aria-label="Seu nome"></div>
  <main class="lobbycards">
   <section class="lobbycard"><div class="cardicon">⇥</div><h2>Entrar em uma sala</h2><p>Digite o código da sala para entrar:</p><div class="fieldrow hasprefix"><span class="prefix">#</span><input class="field" id="cd" placeholder="Código da sala" maxlength="4" autocomplete="off" aria-label="Código da sala"></div><button class="action blue" onclick="join()"><span>⇥</span> Entrar</button></section>
   <section class="lobbycard"><div class="cardicon">⊕</div><h2>Criar uma sala</h2><p>Você será o anfitrião da sala:</p><button class="action green" onclick="create()"><span>▶</span> Criar Sala</button></section>
@@ -99,22 +113,36 @@ body:has(#game:not([hidden])){overflow:hidden}
  <footer class="lobbyfoot"><div class="footitem"><strong>🏆</strong><span>Jogue em<br>tempo real</span></div><div class="footsep"></div><div class="footitem"><strong>♟</strong><span>Desafie seus<br>amigos</span></div><div class="footsep"></div><div class="footitem"><strong>ϟ</strong><span>Divirta-se!</span></div></footer>
 </div>
 <div id="game" hidden>
- <header class="gamebar"><div class="gamebrand">⚄ Dominó <span>Online</span></div><div class="gamebar-right"><div id="hdr" class="room-pill"></div><button class="bar-icon" aria-label="Configurações" title="Configurações">⚙</button><button class="bar-icon" onclick="leaveRoom()" aria-label="Sair da sala" title="Sair">⇥</button></div></header>
+ <header class="gamebar"><div class="gamebrand">⚄ Dominó <span>Online</span></div><div class="gamebar-right"><div id="hdr" class="room-pill"></div><button type="button" class="bar-icon" aria-label="Configurações" title="Regras" onclick="openRules()">⚙</button><button type="button" class="bar-icon" onclick="leaveRoom()" aria-label="Sair da sala" title="Sair">⇥</button></div></header>
  <main class="game-layout"><div id="opp"></div>
   <div id="scene"><div id="table"><div id="board"><div id="snake"></div></div></div></div>
-  <section class="player-self"><div id="mine"></div><div class="self-card"><div class="self-avatar" id="selfAvatar">D</div><div><div class="self-name" id="selfName">Você</div><div class="self-score" id="selfScore">0</div></div></div><div class="game-actions" id="actionButtons"></div></section>
+  <section class="player-self"><div id="mine"></div><div class="self-card"><div class="self-avatar" id="selfAvatar">?</div><div><div class="self-name" id="selfName">Você</div><div class="self-score" id="selfScore">0</div></div></div><div class="game-actions" id="actionButtons"></div></section>
  </main><div id="msg"></div><div id="ctl"></div>
 </div>
 
 <div id="fx" hidden><div id="fxbox"></div></div>
+<div id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+ <div id="modalbox">
+  <h3 id="modalTitle">Regras do Dominó</h3>
+  <ul>
+   <li>Cada jogador começa com 7 peças.</li>
+   <li>Quem tem a maior peca (preferência para doubles) inicia.</li>
+   <li>Encaixe uma ponta livre da mesa. Se não puder, compre ou passe.</li>
+   <li>Doubles (0-0, 1-1…) ficam destacados em dourado.</li>
+   <li>Quem zerar as peças vence. Se trancar, vence quem tiver menos pontos (depois menos peças).</li>
+   <li>Compartilhe o código de 4 letras da sala com seus amigos.</li>
+  </ul>
+  <button type="button" class="close" onclick="closeRules()">Entendi</button>
+ </div>
+</div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
-// 1) COLE AQUI a config do seu projeto Firebase (precisa do databaseURL)
+
 const firebaseConfig={apiKey:"AIzaSyD5KKnFBcBrtvddlHUyCsf5afe70c426Eo",authDomain:"domino-11119.firebaseapp.com",databaseURL:"https://domino-11119-default-rtdb.firebaseio.com/",projectId:"domino-11119",storageBucket:"domino-11119.firebasestorage.app",messagingSenderId:"994443409702",appId:"1:994443409702:web:d82f9177af7ca6849f29e7"};
 firebase.initializeApp(firebaseConfig);const db=firebase.database();
 const $=id=>document.getElementById(id);
-let code,me=-1,R=null,ref,sel=null;
+let code,me=-1,R=null,ref,sel=null,disc=null,leaving=false;
 const ALL=[];for(let a=0;a<7;a++)for(let b=a;b<7;b++)ALL.push(''+a+b);
 const MK=[[],[4],[0,8],[0,4,8],[0,2,6,8],[0,2,4,6,8],[0,2,3,5,6,8]];
 const pc=s=>[+s[0],+s[1]],sum=s=>+s[0]+ +s[1];
@@ -125,112 +153,206 @@ function rec(parent,items,key,make,upd){
   if(upd)upd(e,it);if(parent.children[i]!==e)parent.insertBefore(e,parent.children[i]||null)});
  old.forEach(e=>e.remove())}
 const half=n=>'<div class="h">'+[...Array(9)].map((_,i)=>MK[n].includes(i)?'<b></b>':'<u></u>').join('')+'</div>';
-function mkt(s,v){const[a,b]=pc(s),e=document.createElement('div');e.className='t drop'+(v?' v':'');
+function mkt(s,v){
+ const[a,b]=pc(s),e=document.createElement('div');
+ e.className='t drop'+(v?' v':'')+(a===b?' dbl':'');
  e.innerHTML=half(a)+'<i></i>'+half(b);return e}
 const norm=g=>{const n=R.p.length;g.h=g.h||[];for(let i=0;i<n;i++)g.h[i]=g.h[i]||[];g.sk=g.sk||[];g.b=g.b||[];return g};
 
 const uid=sessionStorage.u||(sessionStorage.u=Math.random().toString(36).slice(2,5).padEnd(3,'x'));
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ESC_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>ESC_MAP[c]);
 const N=i=>((R&&R.p&&R.p[i])||'').slice(3);
 const shuf=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 const myName=()=>$('nm').value.trim()||'Jogador';
+
+function openRules(){$('modal').hidden=false}
+function closeRules(){$('modal').hidden=true}
+$('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeRules()});
+
 function create(){
  code=Array.from({length:4},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.random()*24|0]).join('');
  db.ref('rooms/'+code).transaction(r=>r?undefined:{st:'lobby',p:[uid+myName()]},(e,ok)=>ok?listen():e?alert('Erro ao criar a sala'):create())}
-async function join(){
+
+function join(){
  code=$('cd').value.trim().toUpperCase();
  if(!/^[A-Z]{4}$/.test(code))return alert('Código inválido');
- const r=db.ref('rooms/'+code);await r.once('value');
- r.transaction(x=>{if(!x||x.st!='lobby'||x.p.length>=4)return;x.p.push(uid+myName());return x},
-  (e,ok)=>ok?listen():alert('Sala não encontrada, cheia ou já iniciada'))}
+ const r=db.ref('rooms/'+code);
+ r.transaction(x=>{
+  if(!x||x.st!=='lobby'||!x.p||x.p.length>=4)return;
+  if(x.p.some(p=>p.startsWith(uid)))return x;
+  x.p.push(uid+myName());
+  return x;
+ },(e,ok)=>ok?listen():alert('Sala não encontrada, cheia ou já iniciada'))}
+
+function setupDisconnect(){
+ if(disc){try{disc.cancel()}catch(_){} disc=null}
+ if(!ref)return;
+ if(me===0){disc=ref.onDisconnect();disc.remove()}
+ else{disc=ref.child('left/'+uid).onDisconnect();disc.set(true)}
+}
+
+function cleanLeftMarkers(room){
+ if(!room||!room.left||!room.p)return room;
+ const left=Object.keys(room.left);
+ if(!left.length)return room;
+ let changed=false;
+ const p=room.p.filter(entry=>{
+  const u=entry.slice(0,3);
+  if(left.includes(u)){changed=true;return false}
+  return true;
+ });
+ if(!changed)return room;
+ if(!p.length||!room.p[0]||left.includes(room.p[0].slice(0,3)))return null;
+ room.p=p;
+ left.forEach(u=>{if(room.left)delete room.left[u]});
+ if(room.left&&!Object.keys(room.left).length)delete room.left;
+ if(room.st&&room.st!=='lobby')return null;
+ return room;
+}
+
 function listen(){
- sessionStorage.d=code;ref=db.ref('rooms/'+code);$('lobby').hidden=true;$('game').hidden=false;
- ref.on('value',s=>{R=s.val();
-  if(!R||(me=R.p.findIndex(x=>x.startsWith(uid)))<0)return leaveRoom(true);
-  render()})}
+ sessionStorage.d=code;ref=db.ref('rooms/'+code);$('lobby').hidden=true;$('game').hidden=false;leaving=false;
+ ref.on('value',s=>{
+  let room=s.val();
+  if(!room){leaveRoom(true);return}
+  if(room.left){
+   const cleaned=cleanLeftMarkers(JSON.parse(JSON.stringify(room)));
+   if(cleaned!==room){
+    if(cleaned===null){ref.remove();return}
+    if(room.p&&room.p[0]&&room.p[0].startsWith(uid)){
+     ref.transaction(cur=>{
+      if(!cur)return null;
+      return cleanLeftMarkers(cur);
+     });
+    }
+    room=cleaned||room;
+   }
+  }
+  R=room;
+  if(!R||!R.p||(me=R.p.findIndex(x=>x.startsWith(uid)))<0){leaveRoom(true);return}
+  setupDisconnect();
+  render();
+ })
+}
+
 function leaveRoom(gone){
- const r=ref,i=me,st=R&&R.st;ref=null;
- if(r){r.off();if(!gone){if(i==0||st!='lobby')r.remove();else r.child('p').transaction(p=>{if(p)p.splice(i,1);return p})}}
- sessionStorage.removeItem('d');code=null;me=-1;R=null;sel=null;$('game').hidden=true;$('lobby').hidden=false;
- if(gone)alert('A sala foi encerrada')}
+ if(leaving)return;leaving=true;
+ const r=ref,i=me,st=R&&R.st;
+ if(disc){try{disc.cancel()}catch(_){} disc=null}
+ ref=null;
+ if(r){
+  r.off();
+  if(!gone){
+   if(i===0||st!=='lobby')r.remove();
+   else r.transaction(room=>{
+    if(!room||!room.p)return null;
+    const idx=room.p.findIndex(x=>x.startsWith(uid));
+    if(idx<0)return room;
+    room.p.splice(idx,1);
+    if(room.left&&room.left[uid])delete room.left[uid];
+    return room.p.length?room:null;
+   });
+  }
+ }
+ sessionStorage.removeItem('d');code=null;me=-1;R=null;sel=null;
+ $('game').hidden=true;$('lobby').hidden=false;
+ if(gone)alert('A sala foi encerrada');
+ leaving=false;
+}
+
+function softLeave(){if(ref&&R)leaveRoom(false)}
+addEventListener('pagehide',softLeave);
+addEventListener('beforeunload',softLeave);
 
 function start(){
  const n=R.p.length,s=shuf([...ALL]),h=[];
  for(let i=0;i<n;i++)h[i]=s.slice(i*7,i*7+7);
  let best=-1,bi=0,bp;
- h.forEach((x,i)=>x.forEach(p=>{const[a,b]=pc(p),k=a==b?100+a:a+b;if(k>best){best=k;bi=i;bp=p}}));
- h[bi]=h[bi].filter(p=>p!=bp);const[a,b]=pc(bp);
- ref.update({st:'play',g:{h,sk:s.slice(n*7),b:[bp],lc:0,e:[a,b],t:(bi+1)%n,ps:0,w:-1,lg:N(bi)+' começou com '+a+'|'+b}})}
+ h.forEach((x,i)=>x.forEach(p=>{const[a,b]=pc(p),k=a===b?100+a:a+b;if(k>best){best=k;bi=i;bp=p}}));
+ h[bi]=h[bi].filter(p=>p!==bp);const[a,b]=pc(bp);
+ ref.update({st:'play',g:{h,sk:s.slice(n*7),b:[bp],lc:0,e:[a,b],t:(bi+1)%n,ps:0,w:-1,lg:N(bi)+' começou com '+a+'|'+b}})
+}
 function commit(g){
  const u={g};
  if(g.w>=0){u.st='end';u['sc/'+g.w]=((R.sc||{})[g.w]||0)+1}
  ref.update(u);sel=null}
 function mv(f){const g=norm(JSON.parse(JSON.stringify(R.g)));f(g);commit(g)}
 function play(s,side){mv(g=>{
- const m=g.e[side],[a,b]=pc(s),o=a==m?b:a,n=R.p.length;
- g.h[me]=g.h[me].filter(x=>x!=s);
- if(side==0){g.b.unshift(''+o+m);g.lc=(g.lc||0)+1;g.e[0]=o}else{g.b.push(''+m+o);g.e[1]=o}
+ const m=g.e[side],[a,b]=pc(s),o=a===m?b:a;
+ g.h[me]=g.h[me].filter(x=>x!==s);
+ if(side===0){g.b.unshift(''+o+m);g.lc=(g.lc||0)+1;g.e[0]=o}else{g.b.push(''+m+o);g.e[1]=o}
  g.ps=0;g.lg=N(me)+' jogou '+a+'|'+b;
- if(!g.h[me].length){g.w=me;g.lg+=' e bateu!'}else g.t=(me+1)%n})}
-function buy(){mv(g=>{g.h[me].push(g.sk.pop());g.lg=N(me)+' comprou uma peça'})}
+ if(!g.h[me].length){g.w=me;g.lg+=' e bateu!'}else g.t=(me+1)%R.p.length})}
+function buy(){mv(g=>{if(!g.sk||!g.sk.length)return;g.h[me].push(g.sk.pop());g.lg=N(me)+' comprou uma peça'})}
 function pass(){mv(g=>{
- const n=R.p.length;g.ps++;g.lg=N(me)+' passou';
- if(g.ps>=n){const sm=g.h.map(x=>x.reduce((t,p)=>t+sum(p),0)*10+x.length);g.w=sm.indexOf(Math.min(...sm));g.bl=1;g.lg='Jogo trancado! Menos pontos: '+N(g.w)}
- else g.t=(me+1)%n})}
+ const n=R.p.length;g.ps=(g.ps||0)+1;g.lg=N(me)+' passou';
+ if(g.ps>=n){
+  let best=Infinity,bi=0;
+  g.h.forEach((hand,i)=>{
+   const pts=hand.reduce((t,p)=>t+sum(p),0);
+   const tiles=hand.length;
+   const score=pts*100+tiles;
+   if(score<best){best=score;bi=i}
+  });
+  g.w=bi;g.bl=1;g.lg='Jogo trancado! Menos pontos: '+N(g.w);
+ }else g.t=(me+1)%n})}
 function pick(s){
- const g=R.g;if(g.w>=0||g.t!=me)return;if(!can(s,g)){const e=$('mine').querySelector('[data-k="'+s+'"]');if(e){e.classList.remove('no');void e.offsetWidth;e.classList.add('no')}return}
- const[a,b]=pc(s),k0=a==g.e[0]||b==g.e[0],k1=a==g.e[1]||b==g.e[1];
+ const g=R.g;if(!g||g.w>=0||g.t!==me)return;
+ if(!can(s,g)){const e=$('mine').querySelector('[data-k="'+s+'"]');if(e){e.classList.remove('no');void e.offsetWidth;e.classList.add('no')}return}
+ const[a,b]=pc(s),k0=a===g.e[0]||b===g.e[0],k1=a===g.e[1]||b===g.e[1];
  if(k0&&k1){sel=s;render()}else play(s,k0?0:1)}
 
 function render(){
+ if(!R||!R.p)return;
  $('hdr').textContent='Sala '+R.p.length+'/4 · código '+code;
- const lobby=R.st=='lobby';$('scene').hidden=lobby;document.querySelector('.player-self').hidden=lobby;$('opp').hidden=lobby;
+ const lobby=R.st==='lobby';$('scene').hidden=lobby;document.querySelector('.player-self').hidden=lobby;$('opp').hidden=lobby;
  if(lobby){
   $('msg').textContent='Jogadores: '+R.p.map(x=>x.slice(3)).join(', ');$('actionButtons').innerHTML='';
-  $('ctl').innerHTML=me==0?`<button class="go" onclick="start()" ${R.p.length<2?'disabled':''}>Iniciar (${R.p.length}/4)</button><div>Compartilhe o código ${code}</div>`:'Aguardando o anfitrião iniciar…';return}
- const g=norm(R.g),n=R.p.length,my=g.w<0&&g.t==me,hand=g.h[me];
+  $('ctl').innerHTML=me===0?'<button class="go" onclick="start()" '+(R.p.length<2?'disabled':'')+'>Iniciar ('+R.p.length+'/4)</button><div>Compartilhe o código '+code+'</div>':'Aguardando o anfitrião iniciar…';return}
+ const g=norm(R.g),my=g.w<0&&g.t===me,hand=g.h[me]||[];
  if(!my)sel=null;
- rec($('opp'),R.p.map((p,i)=>i).filter(i=>i!==me),i=>i,()=>{const e=document.createElement('div');e.className='pl';return e},(e,i)=>{
-  e.classList.toggle('on',g.w<0&&g.t==i);
-  e.innerHTML='<div class="pname">'+esc(N(i))+'</div><div class="pmeta">'+g.h[i].length+' peças</div><div class="backs">'+Array.from({length:Math.min(g.h[i].length,7)},()=>'<span class="backtile"></span>').join('')+'</div>'});
+ rec($('opp'),R.p.map((_,i)=>i).filter(i=>i!==me),i=>i,()=>{const e=document.createElement('div');e.className='pl';return e},(e,i)=>{
+  e.classList.toggle('on',g.w<0&&g.t===i);
+  e.innerHTML='<div class="pname">'+esc(N(i))+'</div><div class="pmeta">'+(g.h[i]?g.h[i].length:0)+' peças</div><div class="backs">'+Array.from({length:Math.min((g.h[i]||[]).length,7)},()=>'<span class="backtile"></span>').join('')+'</div>'});
  $('selfName').textContent=N(me)||'Você';$('selfAvatar').textContent=(N(me)[0]||'?').toUpperCase();$('selfScore').textContent=(R.sc||{})[me]||0;
  layout(g);
  rec($('mine'),hand,s=>s,s=>mkt(s,1),(e,s)=>{
-  e.classList.toggle('sel',sel==s);e.onclick=()=>pick(s)});
+  e.classList.toggle('sel',sel===s);e.onclick=()=>pick(s)});
  let msg=g.lg||'',c='';
  if(g.w>=0){msg='🏆 '+N(g.w)+' venceu! '+g.lg;
-  c=me==0?'<button class="go" onclick="start()">Nova partida</button>':'Aguardando o anfitrião…'}
+  c=me===0?'<button class="go" onclick="start()">Nova partida</button>':'Aguardando o anfitrião…'}
  else if(my){
-  if(sel)c=`<button onclick="play('${sel}',0)">Esquerda (${g.e[0]})</button><button onclick="play('${sel}',1)">Direita (${g.e[1]})</button><button onclick="sel=null;render()">Cancelar</button>`;
-  else if(!hand.some(s=>can(s,g)))c=g.sk.length?'<button class="go" onclick="buy()">Comprar peça</button>':'<button onclick="pass()">Passar a vez</button>';
+  if(sel)c='<button onclick="play(\''+sel+'\',0)">Esquerda ('+g.e[0]+')</button><button onclick="play(\''+sel+'\',1)">Direita ('+g.e[1]+')</button><button onclick="sel=null;render()">Cancelar</button>';
+  else if(!hand.some(s=>can(s,g)))c=(g.sk&&g.sk.length)?'<button class="go" onclick="buy()">Comprar peça</button>':'<button onclick="pass()">Passar a vez</button>';
   else c='Sua vez!';
  }else c='Vez de '+N(g.t);
  if(g.w>=0)result(g);else fxKey='';$('msg').textContent=msg;$('actionButtons').innerHTML=c;$('ctl').innerHTML=''}
 
-
-// Mantém a mesa estável para priorizar a leitura e os toques em telas móveis.
 if(sessionStorage.d){code=sessionStorage.d;listen()}
 const D=[[1,0],[0,1],[-1,0],[0,-1]],S=40;let fxKey='';
 function layout(g){
+ if(!g||!g.b||!g.b.length)return;
  const bd=$('board'),W=bd.clientWidth||300,Hh=bd.clientHeight||300,NP=W>Hh*1.4?7:5,b=g.b,c=g.lc||0,pos=[];
  function walk(list,x,y,di,left){let cnt=0;
   list.forEach(s=>{
    if(cnt>=NP){const o=D[di%4];di++;const n=D[di%4];x+=(o[0]+n[0])*S/2;y+=(o[1]+n[1])*S/2;cnt=0}
-   const[a,bb]=pc(s),dbl=a==bb,ln=dbl?S:2*S,d=D[di%4],th=di%4*90;
+   const[a,bb]=pc(s),dbl=a===bb,ln=dbl?S:2*S,d=D[di%4],th=di%4*90;
    pos.push({s,cx:x+d[0]*ln/2,cy:y+d[1]*ln/2,rot:(dbl?th+90:th+(left?180:0))%360});
    x+=d[0]*ln;y+=d[1]*ln;cnt++})}
- const[a0,b0]=pc(b[c]),d0=a0==b0,h0=(d0?S:2*S)/2;
+ const[a0,b0]=pc(b[c]),d0=a0===b0,h0=(d0?S:2*S)/2;
  pos.push({s:b[c],cx:0,cy:0,rot:d0?90:0});
  walk(b.slice(c+1),h0,0,0,false);walk(b.slice(0,c).reverse(),-h0,0,2,true);
  let x1=1e9,x2=-1e9,y1=1e9,y2=-1e9;
- pos.forEach(p=>{const v=p.rot%180==90,w=v?S:2*S,h=v?2*S:S;x1=Math.min(x1,p.cx-w/2);x2=Math.max(x2,p.cx+w/2);y1=Math.min(y1,p.cy-h/2);y2=Math.max(y2,p.cy+h/2)});
+ pos.forEach(p=>{const v=p.rot%180===90,w=v?S:2*S,h=v?2*S:S;x1=Math.min(x1,p.cx-w/2);x2=Math.max(x2,p.cx+w/2);y1=Math.min(y1,p.cy-h/2);y2=Math.max(y2,p.cy+h/2)});
  const bw=x2-x1+24,bh=y2-y1+24,k=Math.min(W/bw,Hh/bh,1.3),sn=$('snake');
- sn.style.cssText=`width:${bw}px;height:${bh}px;transform:translate(-50%,-50%) scale(${k})`;
+ sn.style.cssText='width:'+bw+'px;height:'+bh+'px;transform:translate(-50%,-50%) scale('+k+')';
  rec(sn,pos,p=>p.s,p=>{const e=document.createElement('div');e.className='slot';e.appendChild(mkt(p.s));return e},(e,p)=>{
   e.style.left=(p.cx-x1+12)+'px';e.style.top=(p.cy-y1+12)+'px';e.firstChild.style.setProperty('--r',p.rot+'deg')})}
 function fx(t,c,ms){const f=$('fx'),b=$('fxbox');b.className=c;b.innerHTML=t;f.hidden=false;b.style.animation='none';void b.offsetWidth;b.style.animation='';return new Promise(r=>setTimeout(()=>{f.hidden=true;r()},ms))}
-async function result(g){const k=g.w+':'+g.b.length;if(fxKey==k)return;fxKey=k;
+async function result(g){const k=g.w+':'+g.b.length;if(fxKey===k)return;fxKey=k;
  if(g.bl)await fx('🔒<br>JOGO TRANCADO','lock',1800);
- fx(g.w==me?'🏆<br>VITÓRIA!':'💀<br>DERROTA<small>'+esc(N(g.w))+' venceu</small>',g.w==me?'win':'lose',2800)}
-addEventListener('resize',()=>{if(R&&R.st!='lobby')render()});
+ fx(g.w===me?'🏆<br>VITÓRIA!':'💀<br>DERROTA<small>'+esc(N(g.w))+' venceu</small>',g.w===me?'win':'lose',2800)}
+addEventListener('resize',()=>{if(R&&R.st!=='lobby')render()});
+
 </script></body></html>
