@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dominó 3D</title>
+<style>
+:root{--bg:#061a43;--panel:#071a3b;--panel2:#0a2452;--blue:#087cf0;--blue2:#075bd5;--green:#08c878;--tx:#f4f7ff;--muted:#b8c8e8;--line:#174887;--s:40px}
+*{box-sizing:border-box} [hidden]{display:none!important}
+body{margin:0;min-height:100vh;color:var(--tx);font:16px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center;background:radial-gradient(ellipse at 50% 38%,#103b80 0%,#08275d 44%,#041536 100%);overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.13;background-image:radial-gradient(circle at 15% 30%,transparent 0 42px,#1c68c4 44px 46px,transparent 48px),radial-gradient(circle at 82% 24%,transparent 0 55px,#1c68c4 57px 59px,transparent 61px),radial-gradient(circle at 88% 78%,transparent 0 38px,#1c68c4 40px 42px,transparent 44px);background-size:380px 330px}
+#lobby{position:relative;z-index:1;min-height:100vh;max-width:1500px;margin:auto;padding:30px clamp(18px,5vw,76px) 0;display:flex;flex-direction:column;align-items:center}
+.brand{width:100%;display:flex;align-items:center;justify-content:space-between;gap:18px;text-align:left}
+.brandmark{display:flex;align-items:center;gap:16px;font-size:clamp(32px,5vw,68px);font-weight:850;letter-spacing:-2.8px;line-height:1}.brandmark .blueword{color:#1684ff;font-style:italic}.brandicon{font-size:clamp(42px,6vw,76px);filter:drop-shadow(0 5px 10px #0005)}
+.brandright{display:flex;align-items:center;gap:14px}.online{border:1px solid #173c76;background:#071a3dcc;border-radius:30px;padding:12px 20px;font-weight:700;white-space:nowrap;box-shadow:0 8px 22px #0002}.dot{display:inline-block;width:11px;height:11px;border-radius:50%;background:#08d47c;margin-right:9px;box-shadow:0 0 12px #08d47c}
+.gear{width:54px;height:54px;border-radius:50%;border:1px solid #173c76;background:#071a3dcc;color:white;font-size:25px;display:grid;place-items:center}
+.tagline{margin:28px 0 0;font-size:clamp(18px,2.5vw,29px);font-weight:650;color:#dce8ff}.underline{width:250px;height:9px;border-top:5px solid #087cf0;border-radius:50%;transform:rotate(-3deg);margin:14px auto 38px}
+.lobbycards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:36px;width:min(100%,1000px);margin:auto auto 48px}
+.lobbycard{background:linear-gradient(145deg,#061735f2,#061632f5);border:2px solid #174b91;border-radius:30px;padding:28px 34px 24px;box-shadow:0 18px 50px #0003,inset 0 1px #ffffff0b;min-width:0}
+.cardicon{font-size:72px;line-height:1.1;margin:0 0 8px;color:#f5f8ff;font-weight:400}.lobbycard h2{font-size:clamp(22px,2.6vw,34px);margin:0 0 10px;font-weight:800;letter-spacing:-.7px}.lobbycard p{margin:0 0 16px;color:#c8d7f2;font-size:18px}
+.field{height:64px;width:100%;border-radius:22px;border:2px solid #244a84;background:#102a55;color:white;padding:0 20px;font-size:19px;text-align:left;outline:none;box-shadow:inset 0 2px 8px #0003;transition:border .2s,box-shadow .2s}.field::placeholder{color:#8ea4c9}.field:focus{border-color:#1684ff;box-shadow:0 0 0 4px #1684ff25}.fieldrow{position:relative;margin:14px 0 16px}.fieldrow .prefix{position:absolute;left:20px;top:50%;transform:translateY(-50%);font-size:25px;color:#dce8ff;font-weight:800;pointer-events:none}.fieldrow.hasprefix input{padding-left:58px}
+.action{width:100%;min-height:64px;border:0;border-radius:22px;color:white;font-size:23px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:13px;cursor:pointer;transition:transform .18s,filter .18s,box-shadow .18s;box-shadow:0 8px 20px #0002}.action:hover{transform:translateY(-2px);filter:brightness(1.08)}.action:active{transform:translateY(0)}.action.blue{background:linear-gradient(110deg,#1689ff,#0862e8)}.action.green{background:linear-gradient(110deg,#0bd37a,#00ad68)}.action:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.lobbyfoot{width:calc(100% + clamp(36px,10vw,152px));margin-top:auto;background:#041535eF;border-top:1px solid #14396e;padding:24px 5vw;display:flex;justify-content:center;align-items:center;gap:clamp(18px,4vw,60px);color:#c4d3ef;font-weight:650;font-size:18px}.footitem{display:flex;align-items:center;gap:15px;text-align:left}.footitem strong{font-size:34px}.footsep{height:44px;width:1px;background:#28518a}
+#game{position:relative;z-index:1;min-height:100vh;padding:0 18px 24px;max-width:1600px;margin:auto}
+.gamebar{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #17447e;padding:0 10px;gap:14px}
+.gamebrand{font-size:clamp(24px,3vw,40px);font-weight:900;color:#fff;letter-spacing:-1.5px;margin:0;white-space:nowrap}.gamebrand span{color:#1684ff;font-style:italic}
+.gamebar-right{display:flex;align-items:center;gap:14px}.room-pill{border:1px solid #1b4b8d;background:#061a3c;border-radius:30px;padding:9px 20px;font-weight:800;white-space:nowrap}.bar-icon{border:0;background:transparent;color:#dceaff;font-size:28px;cursor:pointer}
+.game-layout{min-height:calc(100vh - 105px);display:grid;grid-template-columns:150px minmax(0,1fr) 150px;grid-template-rows:auto minmax(260px,1fr) auto;gap:14px 18px;padding:12px 0}
+#opp{grid-column:1/4;grid-row:1;display:flex;justify-content:center;align-items:stretch;gap:12px;flex-wrap:wrap;min-height:80px}
+.pl{background:linear-gradient(145deg,#061b40ee,#061735ee);border:2px solid #174b91;border-radius:18px;padding:9px 14px;min-width:145px;max-width:220px;flex:1 1 145px;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 8px 24px #0003}.pl.on{border-color:#08d47c;box-shadow:0 0 18px #08d47c55}.pl:before{content:'●';color:#08d47c;font-size:10px}.pl .pname{font-weight:800;font-size:16px}.pl .pmeta{color:#ffdf38;font-weight:900;font-size:18px}.pl .backs{display:flex;gap:4px;margin-top:5px}.backtile{width:24px;height:31px;border-radius:5px;border:1px solid #3186ff;background:repeating-radial-gradient(circle at 50% 50%,#1d5bb1 0 2px,#0b2e69 3px 7px);box-shadow:inset 0 0 0 2px #ffffff12}
+#scene{grid-column:2;grid-row:2;perspective:1000px;padding:8px;overflow:hidden;min-width:0;display:flex;align-items:center}#table{width:100%;min-height:300px;transform:none;transition:transform .2s;background:radial-gradient(ellipse at 50% 45%,#0c3678,#061d4c 75%);border:2px solid #174b91;border-radius:24px;box-shadow:0 20px 50px #0005,inset 0 0 70px #00112f;padding:18px;display:flex;flex-direction:column;gap:18px;justify-content:center}
+#board{display:flex;align-items:center;gap:4px;overflow-x:auto;min-height:115px;padding:14px 10px;justify-content:flex-start;scrollbar-color:#1b65c4 #061b40}#mine{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;min-height:78px;align-items:center;padding:12px;background:#061a3caa;border:1px solid #174b91;border-radius:20px}
+.t{display:flex;flex:none;position:relative;width:calc(var(--s)*2);height:var(--s);background:linear-gradient(145deg,#fff,#dce7fa);border-radius:8px;box-shadow:1px 1px 0 #c4d0e4,3px 5px 0 #9aabc5,4px 8px 12px #00152b99;color:#07152c}.t.d{flex-direction:column;width:var(--s);height:calc(var(--s)*2)}.t i{position:absolute;background:#8090a9}.t:not(.d) i{left:50%;top:15%;bottom:15%;width:2px}.t.d i{top:50%;left:15%;right:15%;height:2px}.h{width:var(--s);height:var(--s);display:grid;grid:repeat(3,1fr)/repeat(3,1fr);padding:6px}.h b{width:75%;height:75%;border-radius:50%;background:#07152c;margin:auto;box-shadow:inset 1px 1px 2px #667}.t.drop{animation:drop .45s ease-out}@keyframes drop{from{transform:translateY(-100px) rotateX(50deg);opacity:0}}
+#mine .t{opacity:.48;transition:transform .2s,opacity .2s}#mine .t.ok{opacity:1;cursor:pointer;transform:translateY(-8px);box-shadow:0 0 0 2px #ffc94a,3px 7px 12px #00152b99}#mine .t.sel{outline:3px solid #08d47c}
+.player-self{grid-column:1/4;grid-row:3;display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap}.self-card{min-width:220px;border:2px solid #1268d4;background:#061a3c;border-radius:22px;padding:10px 24px;display:flex;align-items:center;justify-content:center;gap:14px}.self-avatar{width:58px;height:58px;border-radius:50%;border:4px solid #087cf0;display:grid;place-items:center;font-size:28px;font-weight:900}.self-name{font-weight:900;font-size:19px}.self-score{font-weight:900;color:#ffdf38;font-size:22px}.game-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.game-actions button,#ctl button{border:1px solid #2460a8;background:linear-gradient(110deg,#087cf0,#075bd5);color:white;border-radius:14px;padding:13px 20px;font-size:16px;font-weight:850;cursor:pointer;box-shadow:0 8px 20px #0003}.game-actions button.go,#ctl button.go{background:linear-gradient(110deg,#0bd37a,#00ad68)}.game-actions button:disabled,#ctl button:disabled{opacity:.4;cursor:not-allowed}
+#msg{min-height:28px;padding:8px;color:#e2edff;font-weight:650}#ctl{padding:4px 12px 12px;text-align:center}
+@media(max-width:850px){#game{padding:0 8px 18px}.gamebar{height:64px}.game-layout{grid-template-columns:1fr;grid-template-rows:auto minmax(250px,1fr) auto;gap:10px}#opp{grid-column:1;grid-row:1}.pl{min-width:110px;padding:7px;font-size:12px}.pl .backs .backtile:nth-child(n+5){display:none}#scene{grid-column:1;grid-row:2;padding:2px}#table{min-height:260px;padding:10px}#board{justify-content:flex-start;min-height:95px}#mine{gap:6px}.player-self{grid-column:1;grid-row:3}.self-card{min-width:180px}.room-pill{font-size:12px;padding:8px 12px}}
+@media(max-width:480px){:root{--s:32px}.gamebrand{font-size:23px}.room-pill{padding:7px 9px}.gamebar-right{gap:4px}.bar-icon{font-size:22px}.pl{flex:1 1 28%;min-width:90px}.pl .pname{font-size:13px}.pl .pmeta{font-size:15px}#table{min-height:230px;border-radius:16px}#mine{padding:8px}.self-card{width:100%;max-width:280px}.game-actions button{padding:11px 14px;font-size:14px}}
+</style></head><body>
+<div id="lobby">
+ <header class="brand"><div class="brandmark"><span class="brandicon">⚄</span><span>Dominó <span class="blueword">Online</span></span></div><div class="brandright"><div class="online"><span class="dot"></span>Multijogador online</div><div class="gear" aria-label="Configurações">⚙</div></div></header>
+ <p class="tagline">Jogue dominó com seus amigos ou jogadores do mundo todo!</p><div class="underline"></div>
+ <main class="lobbycards">
+  <section class="lobbycard"><div class="cardicon">⇥</div><h2>Entrar em uma sala</h2><p>Digite o código da sala para entrar:</p><div class="fieldrow hasprefix"><span class="prefix">#</span><input class="field" id="cd" placeholder="Código da sala" maxlength="4" autocomplete="off" aria-label="Código da sala"></div><button class="action blue" onclick="join()"><span>⇥</span> Entrar</button></section>
+  <section class="lobbycard"><div class="cardicon">⊕</div><h2>Criar uma sala</h2><p>Escolha um nome para criar sua sala:</p><div class="fieldrow hasprefix"><span class="prefix">♟</span><input class="field" id="nm" placeholder="Seu nome" maxlength="12" autocomplete="nickname" aria-label="Seu nome"></div><button class="action green" onclick="create()"><span>▶</span> Criar Sala</button></section>
+ </main>
+ <footer class="lobbyfoot"><div class="footitem"><strong>🏆</strong><span>Jogue em<br>tempo real</span></div><div class="footsep"></div><div class="footitem"><strong>♟</strong><span>Desafie seus<br>amigos</span></div><div class="footsep"></div><div class="footitem"><strong>ϟ</strong><span>Divirta-se!</span></div></footer>
+</div>
+<div id="game" hidden>
+ <header class="gamebar"><div class="gamebrand">⚄ Dominó <span>Online</span></div><div class="gamebar-right"><div id="hdr" class="room-pill"></div><button class="bar-icon" aria-label="Configurações" title="Configurações">⚙</button><button class="bar-icon" onclick="leaveRoom()" aria-label="Sair da sala" title="Sair">⇥</button></div></header>
+ <main class="game-layout"><div id="opp"></div>
+  <div id="scene"><div id="table"><div id="board"></div></div></div>
+  <section class="player-self"><div id="mine"></div><div class="self-card"><div class="self-avatar">D</div><div><div class="self-name" id="selfName">Você</div><div class="self-score" id="selfScore">0</div></div></div><div class="game-actions" id="actionButtons"></div></section>
+ </main><div id="msg"></div><div id="ctl"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+// 1) COLE AQUI a config do seu projeto Firebase (precisa do databaseURL)
+const firebaseConfig={apiKey:"AIzaSyD5KKnFBcBrtvddlHUyCsf5afe70c426Eo",authDomain:"domino-11119.firebaseapp.com",databaseURL:"https://domino-11119-default-rtdb.firebaseio.com/",projectId:"domino-11119",storageBucket:"domino-11119.firebasestorage.app",messagingSenderId:"994443409702",appId:"1:994443409702:web:d82f9177af7ca6849f29e7"};
+firebase.initializeApp(firebaseConfig);const db=firebase.database();
+const $=id=>document.getElementById(id);
+let code,me=-1,R=null,ref,sel=null;
+const ALL=[];for(let a=0;a<7;a++)for(let b=a;b<7;b++)ALL.push(''+a+b);
+const MK=[[],[4],[0,8],[0,4,8],[0,2,6,8],[0,2,4,6,8],[0,2,3,5,6,8]];
+const pc=s=>[+s[0],+s[1]],sum=s=>+s[0]+ +s[1];
+const can=(s,g)=>{const[a,b]=pc(s);return g.e.some(v=>v==a||v==b)};
+function rec(parent,items,key,make,upd){
+ const old=new Map([...parent.children].map(e=>[e.dataset.k,e]));
+ items.forEach((it,i)=>{const k=''+key(it);let e=old.get(k);if(e)old.delete(k);else{e=make(it);e.dataset.k=k}
+  if(upd)upd(e,it);if(parent.children[i]!==e)parent.insertBefore(e,parent.children[i]||null)});
+ old.forEach(e=>e.remove())}
+const half=n=>'<div class="h">'+[...Array(9)].map((_,i)=>MK[n].includes(i)?'<b></b>':'<u></u>').join('')+'</div>';
+function mkt(s){const[a,b]=pc(s),e=document.createElement('div');e.className='t drop'+(a==b?' d':'');
+ e.innerHTML=half(a)+'<i></i>'+half(b);return e}
+const norm=g=>{const n=R.p.length;g.h=g.h||[];for(let i=0;i<n;i++)g.h[i]=g.h[i]||[];g.sk=g.sk||[];g.b=g.b||[];return g};
+
+function create(){
+ const n=$('nm').value.trim()||'Jogador';
+ code=Array.from({length:4},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.random()*24|0]).join('');
+ db.ref('rooms/'+code).set({st:'lobby',p:[n]}).then(()=>{me=0;listen()})}
+async function join(){
+ const n=$('nm').value.trim()||'Jogador';code=$('cd').value.trim().toUpperCase();
+ const s=await db.ref('rooms/'+code).once('value'),r=s.val();
+ if(!r||r.st!='lobby')return alert('Sala não encontrada ou partida já iniciada');
+ let idx=-1;
+ db.ref('rooms/'+code+'/p').transaction(p=>{p=p||[];if(p.length>=4)return;idx=p.length;p.push(n);return p},
+  (e,ok)=>{if(!ok)return alert('Sala cheia');me=idx;listen()})}
+function listen(){
+ sessionStorage.d=JSON.stringify({c:code,m:me});
+ ref=db.ref('rooms/'+code);$('lobby').hidden=true;$('game').hidden=false;
+ ref.on('value',s=>{R=s.val();if(R)render()})}
+
+function start(){
+ const n=R.p.length,s=[...ALL].sort(()=>Math.random()-.5),h=[];
+ for(let i=0;i<n;i++)h[i]=s.slice(i*7,i*7+7);
+ let best=-1,bi=0,bp;
+ h.forEach((x,i)=>x.forEach(p=>{const[a,b]=pc(p),k=a==b?100+a:a+b;if(k>best){best=k;bi=i;bp=p}}));
+ h[bi]=h[bi].filter(p=>p!=bp);const[a,b]=pc(bp);
+ ref.update({st:'play',g:{h,sk:s.slice(n*7),b:[bp],e:[a,b],t:(bi+1)%n,ps:0,w:-1,lg:R.p[bi]+' começou com '+a+'|'+b}})}
+function commit(g){
+ const u={g};
+ if(g.w>=0){u.st='end';u['sc/'+g.w]=((R.sc||{})[g.w]||0)+1}
+ ref.update(u);sel=null}
+function mv(f){const g=norm(JSON.parse(JSON.stringify(R.g)));f(g);commit(g)}
+function play(s,side){mv(g=>{
+ const m=g.e[side],[a,b]=pc(s),o=a==m?b:a,n=R.p.length;
+ g.h[me]=g.h[me].filter(x=>x!=s);
+ if(side==0){g.b.unshift(''+o+m);g.e[0]=o}else{g.b.push(''+m+o);g.e[1]=o}
+ g.ps=0;g.lg=R.p[me]+' jogou '+a+'|'+b;
+ if(!g.h[me].length){g.w=me;g.lg+=' e bateu!'}else g.t=(me+1)%n})}
+function buy(){mv(g=>{g.h[me].push(g.sk.pop());g.lg=R.p[me]+' comprou uma peça'})}
+function pass(){mv(g=>{
+ const n=R.p.length;g.ps++;g.lg=R.p[me]+' passou';
+ if(g.ps>=n){const sm=g.h.map(x=>x.reduce((t,p)=>t+sum(p),0));g.w=sm.indexOf(Math.min(...sm));g.lg='Jogo trancado! Menos pontos: '+R.p[g.w]}
+ else g.t=(me+1)%n})}
+function pick(s){
+ const g=R.g;if(g.w>=0||g.t!=me||!can(s,g))return;
+ const[a,b]=pc(s),k0=a==g.e[0]||b==g.e[0],k1=a==g.e[1]||b==g.e[1];
+ if(k0&&k1){sel=s;render()}else play(s,k0?0:1)}
+
+function render(){
+ $('hdr').textContent='Sala '+R.p.length+'/4 · código '+code;
+ const lobby=R.st=='lobby';$('scene').hidden=lobby;
+ if(lobby){
+  $('msg').textContent='Jogadores: '+R.p.join(', ');$('actionButtons').innerHTML='';
+  $('ctl').innerHTML=me==0?`<button class="go" onclick="start()" ${R.p.length<2?'disabled':''}>Iniciar (${R.p.length}/4)</button><div>Compartilhe o código ${code}</div>`:'Aguardando o anfitrião iniciar…';return}
+ const g=norm(R.g),n=R.p.length,my=g.w<0&&g.t==me,hand=g.h[me];
+ if(!my)sel=null;
+ rec($('opp'),R.p.map((p,i)=>i).filter(i=>i!==me),i=>i,()=>{const e=document.createElement('div');e.className='pl';return e},(e,i)=>{
+  e.classList.toggle('on',g.w<0&&g.t==i);
+  e.innerHTML='<div class="pname">'+R.p[i]+'</div><div class="pmeta">'+g.h[i].length+' peças</div><div class="backs">'+Array.from({length:Math.min(g.h[i].length,7)},()=>'<span class="backtile"></span>').join('')+'</div>'});
+ $('selfName').textContent=R.p[me]||'Você';$('selfScore').textContent=(R.sc||{})[me]||0;
+ rec($('board'),g.b,s=>s,mkt);
+ rec($('mine'),hand,s=>s,mkt,(e,s)=>{
+  e.classList.toggle('ok',my&&can(s,g));e.classList.toggle('sel',sel==s);e.onclick=()=>pick(s)});
+ let msg=g.lg||'',c='';
+ if(g.w>=0){msg='🏆 '+R.p[g.w]+' venceu! '+g.lg;
+  c=me==0?'<button class="go" onclick="start()">Nova partida</button>':'Aguardando o anfitrião…'}
+ else if(my){
+  if(sel)c=`<button onclick="play('${sel}',0)">Esquerda (${g.e[0]})</button><button onclick="play('${sel}',1)">Direita (${g.e[1]})</button><button onclick="sel=null;render()">Cancelar</button>`;
+  else if(!hand.some(s=>can(s,g)))c=g.sk.length?'<button class="go" onclick="buy()">Comprar peça</button>':'<button onclick="pass()">Passar a vez</button>';
+  else c='Sua vez: escolha uma peça brilhante';
+ }else c='Vez de '+R.p[g.t];
+ $('msg').textContent=msg;$('actionButtons').innerHTML=c;$('ctl').innerHTML=''}
+
+function leaveRoom(){if(ref)ref.off();sessionStorage.removeItem('d');code=null;me=-1;R=null;sel=null;$('game').hidden=true;$('lobby').hidden=false}
+// Mantém a mesa estável para priorizar a leitura e os toques em telas móveis.
+const sv=JSON.parse(sessionStorage.d||'null');if(sv){code=sv.c;me=sv.m;listen()}
+</script></body></html>
