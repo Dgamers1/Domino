@@ -178,36 +178,46 @@ function join(){
  code=$('cd').value.trim().toUpperCase();
  if(!/^[A-Z]{4}$/.test(code))return alert('Código inválido');
  const r=db.ref('rooms/'+code);
- r.transaction(x=>{
-  if(!x||x.st!=='lobby'||!x.p||x.p.length>=4)return;
-  if(x.p.some(p=>p.startsWith(uid)))return x;
-  x.p.push(uid+myName());
-  return x;
- },(e,ok)=>ok?listen():alert('Sala não encontrada, cheia ou já iniciada'))}
+ r.once('value').then(snap=>{
+  const cur=snap.val();
+  if(!cur)return alert('Sala não encontrada. Confira o código ou peça ao anfitrião para criar de novo.');
+  if(cur.st!=='lobby')return alert('Essa sala já começou a partida.');
+  if(!cur.p||cur.p.length>=4)return alert('Sala cheia (máx. 4 jogadores).');
+  if(cur.p.some(p=>p.startsWith(uid)))return listen();
+  r.transaction(x=>{
+   if(!x||x.st!=='lobby'||!x.p||x.p.length>=4)return;
+   if(x.p.some(p=>p.startsWith(uid)))return x;
+   return Object.assign({},x,{p:x.p.concat([uid+myName()])});
+  },(e,ok)=>{
+   if(ok)listen();
+   else if(e)alert('Erro de conexão: '+e.message);
+   else alert('Não foi possível entrar. Tente de novo.');
+  });
+ }).catch(err=>alert('Erro ao conectar: '+(err&&err.message||err)))}
 
 function setupDisconnect(){
  if(disc){try{disc.cancel()}catch(_){} disc=null}
  if(!ref)return;
- if(me===0){disc=ref.onDisconnect();disc.remove()}
- else{disc=ref.child('left/'+uid).onDisconnect();disc.set(true)}
+ // Todos marcam left/<uid>; a limpeza remove a sala se o host sumiu ou ficou vazia
+ disc=ref.child('left/'+uid).onDisconnect();
+ disc.set(true);
 }
 
 function cleanLeftMarkers(room){
  if(!room||!room.left||!room.p)return room;
  const left=Object.keys(room.left);
  if(!left.length)return room;
- let changed=false;
- const p=room.p.filter(entry=>{
-  const u=entry.slice(0,3);
-  if(left.includes(u)){changed=true;return false}
-  return true;
- });
- if(!changed)return room;
- if(!p.length||!room.p[0]||left.includes(room.p[0].slice(0,3)))return null;
+ const hostUid=room.p[0]&&room.p[0].slice(0,3);
+ const hostLeft=hostUid&&left.includes(hostUid);
+ const p=room.p.filter(entry=>!left.includes(entry.slice(0,3)));
+ if(p.length===room.p.length)return room; // nada mudou
+ // Partida em andamento: se alguém saiu, encerra (evita índices quebrados)
+ if(room.st&&room.st!=='lobby')return null;
+ // Lobby: só remove quem saiu; se ficou vazia, apaga a sala
+ if(!p.length)return null;
  room.p=p;
  left.forEach(u=>{if(room.left)delete room.left[u]});
  if(room.left&&!Object.keys(room.left).length)delete room.left;
- if(room.st&&room.st!=='lobby')return null;
  return room;
 }
 
@@ -238,21 +248,28 @@ function listen(){
 
 function leaveRoom(gone){
  if(leaving)return;leaving=true;
- const r=ref,i=me,st=R&&R.st;
+ const r=ref,i=me,st=R&&R.st,n=R&&R.p&&R.p.length;
  if(disc){try{disc.cancel()}catch(_){} disc=null}
  ref=null;
  if(r){
   r.off();
   if(!gone){
-   if(i===0||st!=='lobby')r.remove();
-   else r.transaction(room=>{
-    if(!room||!room.p)return null;
-    const idx=room.p.findIndex(x=>x.startsWith(uid));
-    if(idx<0)return room;
-    room.p.splice(idx,1);
-    if(room.left&&room.left[uid])delete room.left[uid];
-    return room.p.length?room:null;
-   });
+   if(st&&st!=='lobby'){
+    // Em partida: encerra a sala
+    r.remove();
+   }else{
+    // Lobby: remove só a si; se ficar vazia, apaga
+    r.transaction(room=>{
+     if(!room||!room.p)return null;
+     const idx=room.p.findIndex(x=>x.startsWith(uid));
+     if(idx<0)return room;
+     const np=room.p.slice();np.splice(idx,1);
+     if(room.left&&room.left[uid])delete room.left[uid];
+     if(!np.length)return null;
+     room.p=np;
+     return room;
+    });
+   }
   }
  }
  sessionStorage.removeItem('d');code=null;me=-1;R=null;sel=null;
@@ -261,9 +278,19 @@ function leaveRoom(gone){
  leaving=false;
 }
 
-function softLeave(){if(ref&&R)leaveRoom(false)}
+// Não remove a sala ao trocar de aba (pagehide). Só o onDisconnect do Firebase
+// limpa se a conexão cair de verdade. beforeunload ainda tenta sair limpo.
+function softLeave(){
+ if(!ref||!R)return;
+ // No lobby: convidado sai da lista; anfitrião NÃO apaga a sala ao trocar de app
+ if(R.st==='lobby'&&me!==0){
+  leaveRoom(false);
+ }else if(R.st!=='lobby'){
+  // Em partida, ao fechar de verdade o onDisconnect cuida; evita matar a sala em pagehide
+ }
+}
 addEventListener('pagehide',softLeave);
-addEventListener('beforeunload',softLeave);
+addEventListener('beforeunload',()=>{if(ref&&R&&R.st!=='lobby'){/* onDisconnect handles */} else if(ref&&R&&me!==0)leaveRoom(false)});
 
 function start(){
  const n=R.p.length,s=shuf([...ALL]),h=[];
